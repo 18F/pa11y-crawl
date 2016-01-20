@@ -20,7 +20,7 @@ var argv = require('minimist')(process.argv.slice(2), {
     'x': 'exclude'
   },
   default: {
-    'standard': 'Section508',
+    'standard': 'WCAG2AA',
     'timeout': 60000,
   }
 });

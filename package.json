@@ -1,6 +1,6 @@
 {
   "name": "pa11y-crawl",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Crawl a site, run pa11y on every HTML page, and get the results",
   "main": "pa11y-crawl",
   "scripts": {
