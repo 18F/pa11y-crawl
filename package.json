@@ -2,20 +2,35 @@
   "name": "pa11y-crawl",
   "version": "0.0.2",
   "description": "Crawl a site, run pa11y on every HTML page, and get the results",
-  "main": "pa11y-crawl",
+  "homepage": "https://github.com/18F/pa11y-crawl",
+  "keywords": ["accessibility", "analysis", "cli"],
+  "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "stvnrlly",
-  "license": "CC0",
+  "contributors": [
+    {
+      "name": "stvnrlly",
+      "email": "steven.reilly@gsa.gov"
+    }
+  ],
+  "license": "CC0-1.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/18F/pa11y-crawl.git"
+  },
+  "bugs": "https://github.com/18F/pa11y-crawl/issues",
   "dependencies": {
     "async": "^1.5.2",
     "chalk": "^1.1.1",
     "jsonfile": "^2.2.3",
     "minimist": "^1.2.0",
     "pa11y": "^3.2.0",
-    "pa11y-reporter-1.0-json": "^1.0.1",
     "simplecrawler": "^0.5.4",
     "single-line-log": "^1.0.1"
+  },
+  "bin": {
+    "pa11y-crawl": "./index.js"
   }
 }

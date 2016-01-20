@@ -32,7 +32,7 @@ var usage = require('./usage');
 // verbose
 // save site?
 
-if (argv.help) {
+if (argv.help || (argv._.length === 0)) {
   usage();
   process.exit();
 }
@@ -184,11 +184,6 @@ myCrawler.on("fetchcomplete", function (queueItem, responseBuffer, response) {
 });
 
 myCrawler.on("complete", function () {
-  jsonfile.writeFile('pages.json',pages,function (err) {
-    if (err) {
-      console.log(err);
-    }
-  });
   if (!quiet) {
     console.log(chalk.cyan('||')+' Crawl complete!');
     console.log(chalk.cyan('|| ------------------------------------------------------'));

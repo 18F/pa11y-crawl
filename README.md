@@ -7,9 +7,7 @@ As a word of warning, this can be time and resource intensive, so make sure that
 ## Installation
 
 ```bash
-git clone git@github.com:18f/pa11y-crawl.git
-cd pa11y-crawl
-npm install
+npm install -g pa11y-crawl
 ```
 
 ## Usage
@@ -17,7 +15,7 @@ npm install
 ### Basic usage
 
 ```bash
-./pa11y-crawl [URL]
+pa11y-crawl [URL]
 ```
 
 ### Advanced usage
