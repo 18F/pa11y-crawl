@@ -32,7 +32,7 @@ var usage = require('./usage');
 // verbose
 // save site?
 
-if (argv.help || (argv._.length === 0)) {
+if (argv.help) {
   usage();
   process.exit();
 }

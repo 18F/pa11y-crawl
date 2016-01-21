@@ -1,6 +1,6 @@
 {
   "name": "pa11y-crawl",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Crawl a site, run pa11y on every HTML page, and get the results",
   "homepage": "https://github.com/18F/pa11y-crawl",
   "keywords": [
