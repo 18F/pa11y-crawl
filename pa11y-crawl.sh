@@ -15,7 +15,7 @@ type jq >/dev/null 2>&1 || {
 type pa11y >/dev/null 2>&1 || {
   echo "${red}x${reset} pa11y not found"
   echo "${blue}|${reset} attempting to install"
-  npm install -g pa11y pa11y-reporter-1.0-json
+  npm install -g pa11y pa11y-reporter-1.0-json >/dev/null
 }
 
 usage(){
@@ -241,7 +241,7 @@ cd ..
 
 if [[ $CI ]]; then
     echo "${green} >>> ${reset} sending data to continua11y"
-    curl -s -X POST $CONTINUA11Y_URL -H "Content-Type: application/json" -d @$OUTPUT
+    curl -s -X POST $CONTINUA11Y_URL -H "Content-Type: application/json" -d @$OUTPUT -o /dev/null 2>&1
 fi
 
 # clean up
