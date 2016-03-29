@@ -9,24 +9,32 @@ reset=`tput sgr0`
 type jq >/dev/null 2>&1 || {
   echo "${red}x${reset} pa11y-crawl relies on jq to edit JSON files"
   echo "Please install jq: https://stedolan.github.io/jq/download/"
+  exit 1
+}
+
+type pa11y >/dev/null 2>&1 || {
+  echo "${red}x${reset} pa11y not found"
+  echo "${blue}|${reset} attempting to install"
+  npm install -g pa11y pa11y-reporter-1.0-json
 }
 
 usage(){
   echo "Usage: pa11y-crawl [options] <URL>"
   echo ""
   echo "Options:"
+  echo "  -d, --directory       use an existing local directory instead of wget"
+  echo "  -c, --continua11y     set continua11y URL (default: continua11y.18f.gov)"
   echo "  -h, --help            show this help message and exit"
-  echo "  -v, --version         show program version and exit"
-  echo "  -o, --output          set output file for report (default: ./results.json)"
-  echo "  -q, --quiet           quiet mode"
-  echo "  -s, --standard        set accessibility standard "
-  echo "                          (Section508, WCAG2A, WCAG2AA (default), WCAG2AAA)"
   echo "  -i, --ci              continuous integration mode; incorporates repo metadata"
   echo "                          and sends a report to continua11y"
-  echo "  -c, --continua11y     set continua11y URL (default: continua11y.18f.gov)"
   echo "  -m, --sitemap         use the site's sitemap.xml to find pages, rather than wget spider"
+  echo "  -o, --output          set output file for report (default: ./results.json)"
+  echo "  -q, --quiet           quiet mode"
+  echo "  -r, --run             pass a command to start a local server for analysis"
+  echo "  -s, --standard        set accessibility standard "
+  echo "                          (Section508, WCAG2A, WCAG2AA (default), WCAG2AAA)"
   echo "  -t, --temp-dir        set location for storing temporary files (default: ./temp)"
-  echo "  -d, --directory       use an existing local directory instead of wget"
+  echo "  -v, --version         show program version and exit"
 }
 
 version(){
@@ -74,6 +82,9 @@ for arg in "$@"; do
     --directory)
       set -- "$@" "-d"
       ;;
+    --run)
+      set -- "$@" "-r"
+      ;;
     *)
       set -- "$@" "$arg"
       ;;
@@ -84,7 +95,7 @@ done
 OPTIND=1
 
 # Process option flags
-while getopts "hvmqo:s:it:c:d:" opt; do
+while getopts "hvmqo:s:it:c:d:r:" opt; do
   case $opt in
     h )
       usage
@@ -118,6 +129,9 @@ while getopts "hvmqo:s:it:c:d:" opt; do
     d )
       TARGET_DIR="$OPTARG"
       ;;
+    r )
+      RUN_COMMAND="$OPTARG"
+      ;;
     * )
       usage
       exit 1
@@ -136,8 +150,8 @@ rm -rf $TEMP_DIR/*
 COMMIT_MSG="$(git log --format=%B --no-merges -n 1 | sed s/\"/\'/g)"
 
 # prepare data for JSON
-if [[ $CI ]]; then
-  if [[ $TRAVIS ]]; then
+if [[ "$CI" = true ]]; then
+  if [[ "$TRAVIS" = true ]]; then
     echo "${green} >>> ${reset} detected travis-ci; grabbing information"
     REPO_SLUG=$TRAVIS_REPO_SLUG
     BRANCH=$TRAVIS_BRANCH
@@ -159,6 +173,12 @@ else
   echo '{"data":{}}' | jq '.' > $OUTPUT
 fi
 
+if [[ $RUN_COMMAND ]]; then
+  echo "${green} >>> ${reset} starting server using \"${RUN_COMMAND}\""
+  eval $RUN_COMMAND >/dev/null 2>&1 &
+  PID=$!
+  sleep 5
+fi
 
 if [[ $TARGET_DIR ]]; then
   # move to the target directory with the site files
@@ -166,8 +186,7 @@ if [[ $TARGET_DIR ]]; then
 else
   cd $TEMP_DIR
   # make local copy of the site using wget
-  if [[ $USE_SITEMAP ]];
-  then
+  if [[ "$USE_SITEMAP" = true ]]; then
       echo "${green} >>> ${reset} using sitemap to mirror relevant portion of site"
       wget --quiet $TARGET/sitemap.xml --no-cache -O - | egrep -o "${TARGET}" > sites.txt
       cat sites.txt | while read a; do wget --convert-links --page-requisites $a; done
@@ -181,7 +200,7 @@ fi
 echo "${green} <<< ${reset} found $(find . -type f | wc -l | sed 's/^ *//;s/ *$//') files in $(find . -mindepth 1 -type d | wc -l | sed 's/^ *//;s/ *$//') directories"
 
 function relpath() {
-    python3 -c 'import sys, os.path; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$1" "${2:-$PWD}";
+    python -c 'import sys, os.path; print os.path.relpath(sys.argv[1], sys.argv[2])' "$1" "${2:-$PWD}";
 }
 
 # iterate through URLs and run runtest on each
@@ -228,3 +247,4 @@ fi
 # clean up
 echo "${green} >>> ${reset} cleaning up"
 rm -rf $TEMP_DIR
+kill $PID

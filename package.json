@@ -1,7 +1,7 @@
 {
   "name": "pa11y-crawl",
   "bin": "./pa11y-crawl.sh",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Crawl a site, run pa11y on every HTML page, and get the results",
   "main": "pa11y-crawl",
   "scripts": {
