@@ -9,6 +9,13 @@ reset=`tput sgr0`
 type jq >/dev/null 2>&1 || {
   echo "${red}x${reset} pa11y-crawl relies on jq to edit JSON files"
   echo "Please install jq: https://stedolan.github.io/jq/download/"
+  exit 1
+}
+
+type pa11y >/dev/null 2>&1 || {
+  echo "${red}x${reset} pa11y not found"
+  echo "${blue}|${reset} attempting to install"
+  npm install -g pa11y pa11y-reporter-1.0-json
 }
 
 usage(){
