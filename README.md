@@ -2,39 +2,40 @@
 
 For testing the accessibility of website, [`pa11y`](https://github.com/nature/pa11y) is a great tool. It only runs on one page at a time, though, so this tool crawls a site to find all HTML pages and runs `pa11y` on each one.
 
-As a word of warning, this can be time and resource intensive, so make sure that both you and the site owner are cool with this before running.
+It is also designed to be used as the data collection tool for [continua11y](https://github.com/18f/continua11y), a continuous integration service for web accessibility.
 
 ## Installation
 
 ```bash
-git clone git@github.com:18f/pa11y-crawl.git
-cd pa11y-crawl
-npm install
+npm install -g pa11y-crawl
 ```
+
+`jq` is also required in order to manipulate JSON files. See that project's [download instructions](https://stedolan.github.io/jq/download/) to install it.
 
 ## Usage
 
 ### Basic usage
 
 ```bash
-./pa11y-crawl [URL]
+pa11y-crawl [URL]
 ```
 
 ### Advanced usage
 
 ```text
-  Options:
+Usage: pa11y-crawl [options] <URL>
 
-    -h, --help                  show this help message and exit
-    -v, --version               show the version and exit
-    -u, --url                   the URL to scan
-    -s, --standard <name>       the accessibility standard to use: Section508, WCAG2A, WCAG2AA (default), WCAG2AAA
-    -t, --timeout <ms>          the timeout in milliseconds
-    -o, --output <file>         the location to write a JSON report
-    -p, --parallel              run pa11y tests in parallel (heavy usage, can cause timeouts more easily)
-    -x, --exclude               exclude likely assets in crawl (may speed crawling)
-    -r, --reporter <reporter>   the reporter to use: json (default), ci
-    -q, --quiet                 quiet mode: run tests with no output to stdout
+Options:
+  -c, --continua11y     set continua11y URL (default: continua11y.18f.gov)
+  -d, --directory       use an existing local directory instead of wget
+  -h, --help            show this help message and exit
+  -i, --ci              continuous integration mode; incorporates repo metadata and sends a report to continua11y
+  -m, --sitemap         use the site's sitemap.xml to find pages, rather than wget spider
+  -o, --output          set output file for report (default: ./results.json)
+  -q, --quiet           quiet mode
+  -s, --standard        set accessibility standard (Section508, WCAG2A, WCAG2AA (default), WCAG2AAA)
+  -t, --temp-dir        set location for storing temporary files (default: ./temp)
+  -v, --version         show program version and exit
 ```
 
 ## Public domain

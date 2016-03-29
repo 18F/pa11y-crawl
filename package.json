@@ -1,6 +1,7 @@
 {
   "name": "pa11y-crawl",
-  "version": "0.0.1",
+  "bin": "./pa11y-crawl.sh",
+  "version": "0.1.0",
   "description": "Crawl a site, run pa11y on every HTML page, and get the results",
   "main": "pa11y-crawl",
   "scripts": {
@@ -9,13 +10,7 @@
   "author": "stvnrlly",
   "license": "CC0",
   "dependencies": {
-    "async": "^1.5.2",
-    "chalk": "^1.1.1",
-    "jsonfile": "^2.2.3",
-    "minimist": "^1.2.0",
     "pa11y": "^3.2.0",
-    "pa11y-reporter-1.0-json": "^1.0.1",
-    "simplecrawler": "^0.5.4",
-    "single-line-log": "^1.0.1"
+    "pa11y-reporter-1.0-json": "^1.0.1"
   }
 }
