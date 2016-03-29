@@ -136,8 +136,8 @@ rm -rf $TEMP_DIR/*
 COMMIT_MSG="$(git log --format=%B --no-merges -n 1 | sed s/\"/\'/g)"
 
 # prepare data for JSON
-if [[ $CI ]]; then
-  if [[ $TRAVIS ]]; then
+if [[ "$CI" = true ]]; then
+  if [[ "$TRAVIS" = true ]]; then
     echo "${green} >>> ${reset} detected travis-ci; grabbing information"
     REPO_SLUG=$TRAVIS_REPO_SLUG
     BRANCH=$TRAVIS_BRANCH
@@ -166,8 +166,7 @@ if [[ $TARGET_DIR ]]; then
 else
   cd $TEMP_DIR
   # make local copy of the site using wget
-  if [[ $USE_SITEMAP ]];
-  then
+  if [[ "$USE_SITEMAP" = true ]]; then
       echo "${green} >>> ${reset} using sitemap to mirror relevant portion of site"
       wget --quiet $TARGET/sitemap.xml --no-cache -O - | egrep -o "${TARGET}" > sites.txt
       cat sites.txt | while read a; do wget --convert-links --page-requisites $a; done
