@@ -22,18 +22,19 @@ usage(){
   echo "Usage: pa11y-crawl [options] <URL>"
   echo ""
   echo "Options:"
+  echo "  -d, --directory       use an existing local directory instead of wget"
+  echo "  -c, --continua11y     set continua11y URL (default: continua11y.18f.gov)"
   echo "  -h, --help            show this help message and exit"
-  echo "  -v, --version         show program version and exit"
-  echo "  -o, --output          set output file for report (default: ./results.json)"
-  echo "  -q, --quiet           quiet mode"
-  echo "  -s, --standard        set accessibility standard "
-  echo "                          (Section508, WCAG2A, WCAG2AA (default), WCAG2AAA)"
   echo "  -i, --ci              continuous integration mode; incorporates repo metadata"
   echo "                          and sends a report to continua11y"
-  echo "  -c, --continua11y     set continua11y URL (default: continua11y.18f.gov)"
   echo "  -m, --sitemap         use the site's sitemap.xml to find pages, rather than wget spider"
+  echo "  -o, --output          set output file for report (default: ./results.json)"
+  echo "  -q, --quiet           quiet mode"
+  echo "  -r, --run             pass a command to start a local server for analysis"
+  echo "  -s, --standard        set accessibility standard "
+  echo "                          (Section508, WCAG2A, WCAG2AA (default), WCAG2AAA)"
   echo "  -t, --temp-dir        set location for storing temporary files (default: ./temp)"
-  echo "  -d, --directory       use an existing local directory instead of wget"
+  echo "  -v, --version         show program version and exit"
 }
 
 version(){
@@ -81,6 +82,9 @@ for arg in "$@"; do
     --directory)
       set -- "$@" "-d"
       ;;
+    --run)
+      set -- "$@" "-r"
+      ;;
     *)
       set -- "$@" "$arg"
       ;;
@@ -91,7 +95,7 @@ done
 OPTIND=1
 
 # Process option flags
-while getopts "hvmqo:s:it:c:d:" opt; do
+while getopts "hvmqo:s:it:c:d:r:" opt; do
   case $opt in
     h )
       usage
@@ -124,6 +128,9 @@ while getopts "hvmqo:s:it:c:d:" opt; do
       ;;
     d )
       TARGET_DIR="$OPTARG"
+      ;;
+    r )
+      RUN_COMMAND="$OPTARG"
       ;;
     * )
       usage
@@ -166,6 +173,12 @@ else
   echo '{"data":{}}' | jq '.' > $OUTPUT
 fi
 
+if [[ $RUN_COMMAND ]]; then
+  echo "${green} >>> ${reset} starting server using \"${RUN_COMMAND}\""
+  eval $RUN_COMMAND >/dev/null 2>&1 &
+  PID=$!
+  sleep 5
+fi
 
 if [[ $TARGET_DIR ]]; then
   # move to the target directory with the site files
@@ -234,3 +247,4 @@ fi
 # clean up
 echo "${green} >>> ${reset} cleaning up"
 rm -rf $TEMP_DIR
+kill $PID
