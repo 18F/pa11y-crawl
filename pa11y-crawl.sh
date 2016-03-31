@@ -215,7 +215,7 @@ else
       rm $TEMP_DIR/sites.txt
   else
       echo "${green} >>> ${reset} using wget to mirror site"
-      wget --quiet --mirror --convert-links $TARGET
+      wget --adjust-extension --quiet --mirror --convert-links --header="Accept: text/*" $TARGET
   fi
 fi
 
@@ -230,11 +230,6 @@ function runtest () {
         echo "${blue} |--------------------------------------- ${reset}"
         echo "${blue} |-> ${reset} analyzing ${URL}"
         if [[ $TARGET_DIR ]]; then
-          # pa11y only seems to work if the file ends in .html
-          if [[ ! ${FILE: -4} = "html" ]]; then
-            mv $FILE $FILE.html
-            FILE=$FILE.html
-          fi
           pa11y -r full-json -s $STANDARD file:///$FILE > $TEMP_DIR/pa11y.json
         else
           # ideally, this should run on the file, as well, but that seems to be error-prone
