@@ -15,7 +15,7 @@ type jq >/dev/null 2>&1 || {
 type pa11y >/dev/null 2>&1 || {
   echo "${red}x${reset} pa11y not found"
   echo "${blue}|${reset} attempting to install"
-  npm install -g pa11y pa11y-reporter-1.0-json >/dev/null
+  npm install -g pa11y pa11y-reporter-full-json >/dev/null
 }
 
 usage(){
@@ -29,6 +29,7 @@ usage(){
   echo "                          and sends a report to continua11y"
   echo "  -m, --sitemap         use the site's sitemap.xml to find pages, rather than wget spider"
   echo "  -o, --output          set output file for report (default: ./results.json)"
+  echo "  -p, --parallel        run tests in parallel, if possible"
   echo "  -q, --quiet           quiet mode"
   echo "  -r, --run             pass a command to start a local server for analysis"
   echo "  -s, --standard        set accessibility standard "
@@ -41,6 +42,11 @@ version(){
   VERSION=$(cat package.json | jq '.version' | tr -d '"')
   echo $VERSION
 }
+
+relpath() {
+    python -c 'import sys, os.path; print os.path.relpath(sys.argv[1], sys.argv[2])' "$1" "${2:-$PWD}";
+}
+
 
 # set default values
 CONTINUA11Y_URL="https://continua11y.18f.gov/incoming"
@@ -85,6 +91,9 @@ for arg in "$@"; do
     --run)
       set -- "$@" "-r"
       ;;
+    --parallel)
+      set -- "$@" "-p"
+      ;;
     *)
       set -- "$@" "$arg"
       ;;
@@ -95,7 +104,7 @@ done
 OPTIND=1
 
 # Process option flags
-while getopts "hvmqo:s:it:c:d:r:" opt; do
+while getopts "hvmqpo:s:it:c:d:r:" opt; do
   case $opt in
     h )
       usage
@@ -132,6 +141,9 @@ while getopts "hvmqo:s:it:c:d:r:" opt; do
     r )
       RUN_COMMAND="$OPTARG"
       ;;
+    p )
+      PARALLEL=true
+      ;;
     * )
       usage
       exit 1
@@ -139,6 +151,12 @@ while getopts "hvmqo:s:it:c:d:r:" opt; do
   esac
 done
 shift $((OPTIND -1))
+
+# show help if run without arguments
+if [ $# -ne 1 ]; then
+  usage
+  exit 0
+fi
 
 TARGET=$1
 
@@ -188,9 +206,13 @@ else
   # make local copy of the site using wget
   if [[ "$USE_SITEMAP" = true ]]; then
       echo "${green} >>> ${reset} using sitemap to mirror relevant portion of site"
-      wget --quiet $TARGET/sitemap.xml --no-cache -O - | egrep -o "${TARGET}" > sites.txt
-      cat sites.txt | while read a; do wget --convert-links --page-requisites $a; done
-      rm sites.txt
+      curl --silent $TARGET/sitemap.xml | grep "<loc>" | sed 's/[^>]*>\([^<]*\).*/\1/' > $TEMP_DIR/sites.txt
+      if [[ "$PARALLEL" = true ]]; then
+        cat $TEMP_DIR/sites.txt | xargs -P 4 -I _url_ sh -c 'save=${1#h*//*/}; save=${save%/}; save=${save//\//-\\-}.html; wget $1 -O $save' -- _url_
+      else
+        cat $TEMP_DIR/sites.txt | while read a; do save=${a#h*//*/} && save=${save%/} && save=${save//\//\\} && wget $a -O "${save}.html"; done
+      fi
+      rm $TEMP_DIR/sites.txt
   else
       echo "${green} >>> ${reset} using wget to mirror site"
       wget --quiet --mirror --convert-links $TARGET
@@ -198,10 +220,6 @@ else
 fi
 
 echo "${green} <<< ${reset} found $(find . -type f | wc -l | sed 's/^ *//;s/ *$//') files in $(find . -mindepth 1 -type d | wc -l | sed 's/^ *//;s/ *$//') directories"
-
-function relpath() {
-    python -c 'import sys, os.path; print os.path.relpath(sys.argv[1], sys.argv[2])' "$1" "${2:-$PWD}";
-}
 
 # iterate through URLs and run runtest on each
 function runtest () {
@@ -212,14 +230,19 @@ function runtest () {
         echo "${blue} |--------------------------------------- ${reset}"
         echo "${blue} |-> ${reset} analyzing ${URL}"
         if [[ $TARGET_DIR ]]; then
-          pa11y -r 1.0-json -s $STANDARD file:///$FILE > $TEMP_DIR/pa11y.json
+          # pa11y only seems to work if the file ends in .html
+          if [[ ! ${FILE: -4} = "html" ]]; then
+            mv $FILE $FILE.html
+            FILE=$FILE.html
+          fi
+          pa11y -r full-json -s $STANDARD file:///$FILE > $TEMP_DIR/pa11y.json
         else
-          pa11y -r 1.0-json -s $STANDARD $URL > $TEMP_DIR/pa11y.json
+          # ideally, this should run on the file, as well, but that seems to be error-prone
+          pa11y -r full-json -s $STANDARD $URL > $TEMP_DIR/pa11y.json
         fi
 
         # add this report into results.json
-        # jq -n --slurpfile a $TEMP_DIR/pa11y.json --slurpfile b $OUTPUT '$b | .[] * {data: {"'"${URL}"'": ($a | .[]) }}' > $TEMP_DIR/temp.json
-        jq -s '.[0] * {data: {"'"${URL}"'":.[1]}}' $OUTPUT $TEMP_DIR/pa11y.json > $TEMP_DIR/temp.json
+        jq -s '.[0] * {data: {(.[1].url): .[1]}}' $OUTPUT $TEMP_DIR/pa11y.json > $TEMP_DIR/temp.json
         cp $TEMP_DIR/temp.json $OUTPUT
         ERROR="$(cat $TEMP_DIR/pa11y.json | jq .count.error)"
         WARNING="$(cat $TEMP_DIR/pa11y.json | jq .count.warning)"
@@ -233,11 +256,15 @@ function runtest () {
 
 echo "${green} >>> ${reset} beginning the analysis"
 echo "${blue} |--------------------------------------- ${reset}"
-for file in $(find .);
-do
-    runtest $file
-done
-cd ..
+if [[ "$PARALLEL" = true ]]; then
+  :
+  # find . | xargs -I{} runtest {}
+else
+  for file in $(find .);
+  do
+      runtest $file
+  done
+fi
 
 if [[ $CI ]]; then
     echo "${green} >>> ${reset} sending data to continua11y"
@@ -247,4 +274,6 @@ fi
 # clean up
 echo "${green} >>> ${reset} cleaning up"
 rm -rf $TEMP_DIR
-kill $PID
+if [[ $RUN_COMMAND ]]; then
+  kill $PID >/dev/null 2>&1
+fi
