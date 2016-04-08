@@ -29,7 +29,7 @@ usage(){
   echo "                          and sends a report to continua11y"
   echo "  -m, --sitemap         use the site's sitemap.xml to find pages, rather than wget spider"
   echo "  -o, --output          set output file for report (default: ./results.json)"
-  echo "  -p, --parallel        run tests in parallel, if possible"
+  echo "  -p, --parallel        the number of parallel processes to run (default: 1)"
   echo "  -q, --quiet           quiet mode"
   echo "  -r, --run             pass a command to start a local server for analysis"
   echo "  -s, --standard        set accessibility standard "
@@ -53,6 +53,7 @@ CONTINUA11Y_URL="https://continua11y.18f.gov/incoming"
 OUTPUT=$(pwd)/results.json
 TEMP_DIR=$(pwd)/pa11y-crawl
 STANDARD="WCAG2AA"
+PARALLEL=false
 
 # Convert known long options to short options
 for arg in "$@"; do
@@ -104,7 +105,7 @@ done
 OPTIND=1
 
 # Process option flags
-while getopts "hvmqpo:s:it:c:d:r:" opt; do
+while getopts "hvmqp:o:s:it:c:d:r:" opt; do
   case $opt in
     h )
       usage
@@ -142,7 +143,13 @@ while getopts "hvmqpo:s:it:c:d:r:" opt; do
       RUN_COMMAND="$OPTARG"
       ;;
     p )
-      PARALLEL=true
+      # TODO: check that this is a number
+      if [[ ! $OPTARG =~ ^[0-9]+$ ]]; then
+        echo "Invalid argument for --parallel: ${OPTARG}"
+        echo "Please enter a number instead"
+        exit 1
+      fi
+      PARALLEL="$OPTARG"
       ;;
     * )
       usage
@@ -207,8 +214,8 @@ else
   if [[ "$USE_SITEMAP" = true ]]; then
       echo "${green} >>> ${reset} using sitemap to mirror relevant portion of site"
       curl --silent $TARGET/sitemap.xml | grep "<loc>" | sed 's/[^>]*>\([^<]*\).*/\1/' > $TEMP_DIR/sites.txt
-      if [[ "$PARALLEL" = true ]]; then
-        cat $TEMP_DIR/sites.txt | xargs -P 4 -I _url_ sh -c 'save=${1#h*//*/}; save=${save%/}; save=${save//\//-\\-}.html; wget $1 -O $save' -- _url_
+      if [[ "$PARALLEL" != false ]]; then
+        cat $TEMP_DIR/sites.txt | xargs -P $PARALLEL -I _url_ sh -c 'save=${1#h*//*/}; save=${save%/}; save=${save//\//-\\-}.html; wget $1 -O $save' -- _url_
       else
         cat $TEMP_DIR/sites.txt | while read a; do save=${a#h*//*/} && save=${save%/} && save=${save//\//\\} && wget $a -O "${save}.html"; done
       fi
@@ -251,9 +258,14 @@ function runtest () {
 
 echo "${green} >>> ${reset} beginning the analysis"
 echo "${blue} |--------------------------------------- ${reset}"
-if [[ "$PARALLEL" = true ]]; then
-  :
-  # find . | xargs -I{} runtest {}
+if [[ "$PARALLEL" != false ]]; then
+  echo "${green} >>> ${reset} running pa11y in parallel"
+  find . | xargs -P $PARALLEL -I _url_ sh -c 'if [[ $(file -b --mime-type $1) == "text/html" ]]; then save=${1#h*//*/}; save=${save%/}; save=${save//\//-\\-}.json; pa11y -r full-json ${1:2} > $save; fi' -- _url_
+  echo "${green} >>> ${reset} consolidating files"
+  for file in $(find $TEMP_DIR -name '*.json'); do
+    jq -s '.[0] * {data: {(.[1].url): .[1]}}' $OUTPUT $file > $TEMP_DIR/temp.json
+    mv $TEMP_DIR/temp.json $OUTPUT
+  done
 else
   for file in $(find .);
   do
