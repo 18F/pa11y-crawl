@@ -124,7 +124,7 @@ while getopts "hvmqpo:s:it:c:d:r:" opt; do
       STANDARD="$OPTARG"
       ;;
     i )
-      CI=true
+      CONTINUA11Y_CI=true
       ;;
     c )
       CONTINUA11Y_URL="$OPTARG"
@@ -168,7 +168,7 @@ rm -rf $TEMP_DIR/*
 COMMIT_MSG="$(git log --format=%B --no-merges -n 1 | sed s/\"/\'/g)"
 
 # prepare data for JSON
-if [[ "$CI" = true ]]; then
+if [[ "$CONTINUA11Y_CI" = true ]]; then
   if [[ "$TRAVIS" = true ]]; then
     echo "${green} >>> ${reset} detected travis-ci; grabbing information"
     REPO_SLUG=$TRAVIS_REPO_SLUG
@@ -261,7 +261,7 @@ else
   done
 fi
 
-if [[ $CI ]]; then
+if [[ $CONTINUA11Y_CI ]]; then
     echo "${green} >>> ${reset} sending data to continua11y"
     curl -s -X POST $CONTINUA11Y_URL -H "Content-Type: application/json" -d @$OUTPUT -o /dev/null 2>&1
 fi
