@@ -183,7 +183,7 @@ if [[ "$CI" = true ]]; then
     COMMIT=$TRAVIS_COMMIT
     PULL_REQUEST=$TRAVIS_PULL_REQUEST
     COMMIT_RANGE=$TRAVIS_COMMIT_RANGE
-  if [[ "$CIRCLECI" = true ]]; then
+  elif [[ "$CIRCLECI" = true ]]; then
     echo "${green} >>> ${reset} detected circleci; grabbing information"
     REPO_SLUG="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
     BRANCH=$CIRCLE_BRANCH
@@ -194,7 +194,7 @@ if [[ "$CI" = true ]]; then
     COMMIT_RANGE="abcd123..jklm789" # not provided on Circle CI
   else
     echo "${green} >>> ${reset} running on unknown ci; building information"
-    REPO_SLUG=$(git remote show $(git remote show) | grep Push | cut -d' ' -f6 | sed -e 's/\.git//' -e 's/git@.*\..*://' -e 's/https:\/\/.*\.[[:alpha:]]*\///')
+    REPO_SLUG=$(git remote show "$(git remote show)" | grep Push | cut -d' ' -f6 | sed -e 's/\.git//' -e 's/git@.*\..*://' -e 's/https:\/\/.*\.[[:alpha:]]*\///')
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     COMMIT=$(git log --format=%H --no-merges -n 1)
     PULL_REQUEST=false # unsure how to check this in git
