@@ -16,6 +16,10 @@ type pa11y >/dev/null 2>&1 || {
   echo "${red}x${reset} pa11y not found"
   echo "${blue}|${reset} attempting to install"
   npm install -g pa11y pa11y-reporter-full-json >/dev/null
+  RESULT=$?
+  if [[ $RESULT -eq 0 ]]; then
+    echo "${green}✔${reset} pa11y successfully installed"
+  fi
 }
 
 usage(){
