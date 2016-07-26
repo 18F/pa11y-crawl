@@ -39,6 +39,7 @@ usage(){
   echo "  -s, --standard        set accessibility standard "
   echo "                          (Section508, WCAG2A, WCAG2AA (default), WCAG2AAA)"
   echo "  -t, --temp-dir        set location for storing temporary files (default: ./temp)"
+  echo "  -w, --wait            set waiting time for app startup, in seconds (default: 5)"
   echo "  -v, --version         show program version and exit"
 }
 
@@ -58,6 +59,7 @@ OUTPUT=$(pwd)/results.json
 TEMP_DIR=$(pwd)/pa11y-crawl
 STANDARD="WCAG2AA"
 PARALLEL=false
+WAIT=5
 
 # Convert known long options to short options
 for arg in "$@"; do
@@ -99,6 +101,9 @@ for arg in "$@"; do
     --parallel)
       set -- "$@" "-p"
       ;;
+    --wait)
+      set -- "$@" "-w"
+      ;;
     *)
       set -- "$@" "$arg"
       ;;
@@ -109,7 +114,7 @@ done
 OPTIND=1
 
 # Process option flags
-while getopts "hvmqp:o:s:it:c:d:r:" opt; do
+while getopts "hvmqp:o:s:it:c:d:r:w:" opt; do
   case $opt in
     h )
       usage
@@ -154,6 +159,9 @@ while getopts "hvmqp:o:s:it:c:d:r:" opt; do
         exit 1
       fi
       PARALLEL="$OPTARG"
+      ;;
+    w )
+      WAIT="$OPTARG"
       ;;
     * )
       usage
@@ -215,7 +223,7 @@ if [[ $RUN_COMMAND ]]; then
   echo "${green} >>> ${reset} starting server using \"${RUN_COMMAND}\""
   eval $RUN_COMMAND >/dev/null 2>&1 &
   PID=$!
-  sleep 5
+  sleep $WAIT
 fi
 
 if [[ $TARGET_DIR ]]; then
