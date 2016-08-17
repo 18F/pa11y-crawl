@@ -28,6 +28,7 @@ usage(){
   echo "Options:"
   echo "  -d, --directory       use an existing local directory instead of wget"
   echo "  -c, --continua11y     set continua11y URL (default: continua11y.18f.gov)"
+  echo "  -f, --filter          filter the scan to specified files"
   echo "  -h, --help            show this help message and exit"
   echo "  -i, --ci              continuous integration mode; incorporates repo metadata"
   echo "                          and sends a report to continua11y"
@@ -60,6 +61,7 @@ TEMP_DIR=$(pwd)/pa11y-crawl
 STANDARD="WCAG2AA"
 PARALLEL=false
 WAIT=5
+FILTER="*"
 
 # Convert known long options to short options
 for arg in "$@"; do
@@ -104,6 +106,9 @@ for arg in "$@"; do
     --wait)
       set -- "$@" "-w"
       ;;
+    --filter)
+      set -- "$@" "-f"
+      ;;
     *)
       set -- "$@" "$arg"
       ;;
@@ -114,7 +119,7 @@ done
 OPTIND=1
 
 # Process option flags
-while getopts "hvmqp:o:s:it:c:d:r:w:" opt; do
+while getopts "hvmqp:o:s:it:c:d:r:w:f:" opt; do
   case $opt in
     h )
       usage
@@ -162,6 +167,9 @@ while getopts "hvmqp:o:s:it:c:d:r:w:" opt; do
       ;;
     w )
       WAIT="$OPTARG"
+      ;;
+    f )
+      FILTER="$OPTARG"
       ;;
     * )
       usage
@@ -288,7 +296,7 @@ if [[ "$PARALLEL" != false ]]; then
     mv $TEMP_DIR/temp.json $OUTPUT
   done
 else
-  for file in $(find .);
+  for file in $(find . -name "$FILTER");
   do
       runtest $file
   done
