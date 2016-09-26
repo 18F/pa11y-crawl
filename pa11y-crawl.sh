@@ -12,6 +12,11 @@ type jq >/dev/null 2>&1 || {
   exit 1
 }
 
+type wget >/dev/null 2>&1 || {
+  echo "${red}x${reset} pa11y-crawl relies on wget to edit download websites"
+  echo "Please install wget"
+}
+
 type pa11y >/dev/null 2>&1 || {
   echo "${red}x${reset} pa11y not found"
   echo "${blue}|${reset} attempting to install"
@@ -50,7 +55,7 @@ version(){
 }
 
 relpath() {
-    python -c 'import sys, os.path; print os.path.relpath(sys.argv[1], sys.argv[2])' "$1" "${2:-$PWD}";
+    python -c 'import sys, os.path; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$1" "${2:-$PWD}";
 }
 
 
@@ -119,7 +124,7 @@ done
 OPTIND=1
 
 # Process option flags
-while getopts "hvmqp:o:s:it:c:d:r:w:f:" opt; do
+while getopts "hvmqp:o:s:it:c:dr:w:f:" opt; do
   case $opt in
     h )
       usage
@@ -151,7 +156,7 @@ while getopts "hvmqp:o:s:it:c:d:r:w:f:" opt; do
       TEMP_DIR="$OPTARG"
       ;;
     d )
-      TARGET_DIR="$OPTARG"
+      TARGET_DIR=true
       ;;
     r )
       RUN_COMMAND="$OPTARG"
@@ -236,7 +241,7 @@ fi
 
 if [[ $TARGET_DIR ]]; then
   # move to the target directory with the site files
-  cd $TARGET_DIR
+  cd $TARGET || exit
 else
   cd $TEMP_DIR
   # make local copy of the site using wget
