@@ -124,7 +124,7 @@ done
 OPTIND=1
 
 # Process option flags
-while getopts "hvmqp:o:s:it:c:d:r:w:f:" opt; do
+while getopts "hvmqp:o:s:it:c:dr:w:f:" opt; do
   case $opt in
     h )
       usage
@@ -156,7 +156,7 @@ while getopts "hvmqp:o:s:it:c:d:r:w:f:" opt; do
       TEMP_DIR="$OPTARG"
       ;;
     d )
-      TARGET_DIR="$OPTARG"
+      TARGET_DIR=true
       ;;
     r )
       RUN_COMMAND="$OPTARG"
@@ -241,7 +241,7 @@ fi
 
 if [[ $TARGET_DIR ]]; then
   # move to the target directory with the site files
-  cd $TARGET_DIR
+  cd $TARGET || exit
 else
   cd $TEMP_DIR
   # make local copy of the site using wget
