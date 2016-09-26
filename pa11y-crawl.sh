@@ -55,7 +55,7 @@ version(){
 }
 
 relpath() {
-    python -c 'import sys, os.path; print os.path.relpath(sys.argv[1], sys.argv[2])' "$1" "${2:-$PWD}";
+    python -c 'import sys, os.path; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$1" "${2:-$PWD}";
 }
 
 
