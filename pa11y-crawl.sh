@@ -12,6 +12,11 @@ type jq >/dev/null 2>&1 || {
   exit 1
 }
 
+type wget >/dev/null 2>&1 || {
+  echo "${red}x${reset} pa11y-crawl relies on wget to edit download websites"
+  echo "Please install wget"
+}
+
 type pa11y >/dev/null 2>&1 || {
   echo "${red}x${reset} pa11y not found"
   echo "${blue}|${reset} attempting to install"
