@@ -294,8 +294,12 @@ echo "${green} >>> ${reset} beginning the analysis"
 echo "${blue} |--------------------------------------- ${reset}"
 if [[ "$PARALLEL" != false ]]; then
   echo "${green} >>> ${reset} running pa11y in parallel"
-  find . | xargs -P $PARALLEL -I _url_ sh -c 'if [[ $(file -b --mime-type $1) == "text/html" ]]; then save=${1#h*//*/}; save=${save%/}; save=${save//\//-\\-}.json; pa11y -r full-json ${1:2} > $save; fi' -- _url_
-  echo "${green} >>> ${reset} consolidating files"
+  if [[ $TARGET_DIR ]]; then
+    find . -name "$FILTER" | xargs -P $PARALLEL -I _url_ sh -c 'if [[ $(file -b --mime-type $1) == "text/html" ]]; then save=${1#h*//*/}; save=${save%/}; save=${save//\//-\\-}.json; pa11y -r full-json file:/${1:2} > $save; fi' -- _url_
+  else
+    find . -name "$FILTER" | xargs -P $PARALLEL -I _url_ sh -c 'if [[ $(file -b --mime-type $1) == "text/html" ]]; then save=${1#h*//*/}; save=${save%/}; save=${save//\//-\\-}.json; pa11y -r full-json ${1:2} > $save; fi' -- _url_
+  fi
+  echo "${green} >>> ${reset} consolidating results"
   for file in $(find $TEMP_DIR -name '*.json'); do
     jq -s '.[0] * {data: {(.[1].url): .[1]}}' $OUTPUT $file > $TEMP_DIR/temp.json
     mv $TEMP_DIR/temp.json $OUTPUT
